@@ -11,6 +11,12 @@ timestamp_str = now.isoformat()         # for record timestamp
 
 st.set_page_config(page_title="Attendance", layout="centered")
 st.title("Mark attendance")
+ACCESS_CODE = "ATTEND2025"
+access_code = st.text_input("Enter access code to proceed:")
+
+if access_code != ACCESS_CODE:
+    st.warning("Please enter a valid access code to mark attendance.")
+    st.stop()
 
 
 with st.form(key="inviter_info_form"):
@@ -22,23 +28,36 @@ with st.form(key="inviter_info_form"):
 
     if submitted:
         all_valid = True
+        # Detect service type
         if hour < 8:
             st.error("Attendance hasn't started yet.")
             st.stop()
         elif hour < 10:
             service = "First Service"
+            other_service_file = f"data/{today_str}-second.json"
         elif hour < 13:
             service = "Second Service"
+            other_service_file = f"data/{today_str}-first.json"
         else:
             st.error("Attendance marking is closed.")
             st.stop()
 
+        # Load current service file
         filename = f"data/{today_str}-first.json" if service == "First Service" else f"data/{today_str}-second.json"
+        attendance_data = []
         if os.path.exists(filename):
             with open(filename, "r") as file:
                 attendance_data = json.load(file)
-        else:
-            attendance_data = []
+
+        # 🔒 Load and check the other service file
+        if os.path.exists(other_service_file):
+            with open(other_service_file, "r") as f:
+                other_service_data = json.load(f)
+                for record in other_service_data:
+                    if record["phone_number"] == phone_number:
+                        st.error(f"You already marked attendance in the other service: {record['service']}")
+                        all_valid = False
+
 
         if user_name:
             if len(user_name.strip().split()) < 2:
