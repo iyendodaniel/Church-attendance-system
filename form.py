@@ -9,13 +9,11 @@ today_str = now.strftime("%Y-%m-%d")
 timestamp_str = now.isoformat()         # for record timestamp
 
 
-st.set_page_config(page_title="Attendance", layout="centered")
-st.title("Mark attendance")
-ACCESS_CODE = "ATTEND2025"
-access_code = st.text_input("Enter access code to proceed:")
+access_code = st.text_input("Enter Access Code:", type="password")
+correct_code = st.secrets["attendance"]["access_code"]
 
-if access_code != ACCESS_CODE:
-    st.warning("Please enter a valid access code to mark attendance.")
+if access_code != correct_code:
+    st.error("Invalid access code. Please contact admin.")
     st.stop()
 
 
