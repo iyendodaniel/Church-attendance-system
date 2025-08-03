@@ -33,7 +33,7 @@ with st.form(key="inviter_info_form"):
         elif hour < 11:
             service = "First Service"
             other_service_file = f"data/{today_str}-second.json"
-        elif hour < 13:
+        elif hour < 14:
             service = "Second Service"
             other_service_file = f"data/{today_str}-first.json"
         else:
