@@ -30,7 +30,7 @@ with st.form(key="inviter_info_form"):
         if hour < 8:
             st.error("Attendance hasn't started yet.")
             st.stop()
-        elif hour < 10:
+        elif hour < 11:
             service = "First Service"
             other_service_file = f"data/{today_str}-second.json"
         elif hour < 13:
