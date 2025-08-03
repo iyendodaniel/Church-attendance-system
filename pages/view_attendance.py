@@ -1,74 +1,64 @@
 import streamlit as st
 import os
 import json
-from datetime import datetime, timedelta
 import pandas as pd
+from datetime import datetime
+from io import BytesIO
 
+st.set_page_config(page_title="View Attendance", layout="wide")
+st.title("📊 Attendance Viewer")
+
+# Select date and service
 today_str = datetime.now().strftime("%Y-%m-%d")
+selected_date = st.date_input("Select Date", datetime.now()).strftime("%Y-%m-%d")
 
-first_file = f"data/{today_str}-first.json"
-second_file = f"data/{today_str}-second.json"
+service_option = st.radio("Select Service to View:", ["First Service", "Second Service"])
 
+# Map to filename
+filename = f"data/{selected_date}-first.json" if service_option == "First Service" else f"data/{selected_date}-second.json"
 
-st.set_page_config(page_title="Admin", layout="centered")
-st.title("Admin View")
-
-ADMIN_PASSWORD = "pass123"
-user_password = st.text_input("Enter password:", type="password")
-
-if user_password != ADMIN_PASSWORD:
-    st.warning("WRONG PASSWORD!")
+if not os.path.exists(filename):
+    st.warning("No attendance data found for the selected service and date.")
     st.stop()
-else:
-    st.success("Correct password")
-    service_option = st.radio("Select Service to View:", ["First service", "Second service", "All services"])
-    attendance_data = []
 
-    if service_option in ["First service", "All services"] and os.path.exists(first_file):
-        with open (first_file, "r") as f:
-            attendance_data += json.load(f)
+# Load attendance data
+with open(filename, "r") as file:
+    attendance_data = json.load(file)
 
-    if service_option in ["Second service", "All services"] and os.path.exists(second_file):
-        with open (second_file, "r") as f:
-            attendance_data += json.load(f)
+# Build DataFrame
+df_rows = []
+for rec in attendance_data:
+    df_rows.append({
+        "Full Name": rec["name"],
+        "Phone Number": rec["phone_number"],
+        "Others Marked": ", ".join(sorted(rec["others_marked"])),  # sort within cell
+        "Timestamp": rec["timestamp"]
+    })
 
+df = pd.DataFrame(df_rows)
 
-    if attendance_data:
-        df = pd.DataFrame(attendance_data)
-        df["Others Count"] = df["others_marked"].apply(len)
+# Sort all by Full Name (alphabetically)
+df = df.sort_values(by="Full Name")
 
-        st.write("### Attendance Records")
-        st.dataframe(df[["name", "phone_number", "service", "others_marked", "timestamp"]])
+# Show table
+st.subheader("📋 Attendance Table")
+st.dataframe(df, use_container_width=True)
 
-        num_main = len(attendance_data)
-        num_others = sum(len(rec["others_marked"]) for rec in attendance_data)
-        grand_total = num_main + num_others
+# Total count
+num_main = len(df)
+num_others = sum(len(rec["others_marked"]) for rec in attendance_data)
+total_present = num_main + num_others
 
-        st.success(f"Main Attendances: {num_main}")
-        st.success(f"Others marked: {num_others}")
-        st.info(f"**Total Attendance:**: {grand_total}")
-        st.subheader("📥 Download Attendance File")
+st.success(f"✅ Total People Marked Present: {total_present} ({num_main} main + {num_others} others)")
 
-        # Allow date selection (default to today)
-        selected_date = st.date_input("Select a date", datetime.today())
-        selected_date_str = selected_date.strftime("%Y-%m-%d")
+# Download Excel
+excel_buffer = BytesIO()
+df.to_excel(excel_buffer, index=False)
+excel_buffer.seek(0)
 
-        # Select service
-        selected_service = st.selectbox("Select Service", ["First Service", "Second Service"])
-
-        # Determine filename
-        file_suffix = "first" if selected_service == "First Service" else "second"
-        filename = f"{selected_date_str}-{file_suffix}.json"
-        filepath = os.path.join("data", filename)
-
-        # Download logic
-        if os.path.exists(filepath):
-            with open(filepath, "rb") as file:
-                st.download_button(
-                    label=f"Download {filename}",
-                    data=file,
-                    file_name=filename,
-                    mime="application/json"
-                )
-        else:
-            st.warning(f"No attendance file found for {selected_service} on {selected_date_str}.")
+st.download_button(
+    label="📥 Download as Excel",
+    data=excel_buffer,
+    file_name=f"{selected_date}-{service_option.lower().replace(' ', '_')}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
