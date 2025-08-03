@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 
 today_str = datetime.now().strftime("%Y-%m-%d")
@@ -47,3 +47,28 @@ else:
         st.success(f"Main Attendances: {num_main}")
         st.success(f"Others marked: {num_others}")
         st.info(f"**Total Attendance:**: {grand_total}")
+        st.subheader("📥 Download Attendance File")
+
+        # Allow date selection (default to today)
+        selected_date = st.date_input("Select a date", datetime.today())
+        selected_date_str = selected_date.strftime("%Y-%m-%d")
+
+        # Select service
+        selected_service = st.selectbox("Select Service", ["First Service", "Second Service"])
+
+        # Determine filename
+        file_suffix = "first" if selected_service == "First Service" else "second"
+        filename = f"{selected_date_str}-{file_suffix}.json"
+        filepath = os.path.join("data", filename)
+
+        # Download logic
+        if os.path.exists(filepath):
+            with open(filepath, "rb") as file:
+                st.download_button(
+                    label=f"Download {filename}",
+                    data=file,
+                    file_name=filename,
+                    mime="application/json"
+                )
+        else:
+            st.warning(f"No attendance file found for {selected_service} on {selected_date_str}.")
