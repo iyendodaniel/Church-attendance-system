@@ -3,62 +3,76 @@ import os
 import json
 import pandas as pd
 from datetime import datetime
-from io import BytesIO
 
 st.set_page_config(page_title="View Attendance", layout="wide")
-st.title("📊 Attendance Viewer")
+st.title("📋 Attendance Records (Admin View)")
 
-# Select date and service
-today_str = datetime.now().strftime("%Y-%m-%d")
-selected_date = st.date_input("Select Date", datetime.now()).strftime("%Y-%m-%d")
-
-service_option = st.radio("Select Service to View:", ["First Service", "Second Service"])
-
-# Map to filename
-filename = f"data/{selected_date}-first.json" if service_option == "First Service" else f"data/{selected_date}-second.json"
-
-if not os.path.exists(filename):
-    st.warning("No attendance data found for the selected service and date.")
+# --- Admin Password ---
+admin_pass = st.text_input("Enter Admin Passcode", type="password")
+if admin_pass != "your_secret_pass":
+    st.warning("Enter the correct admin passcode to view attendance.")
     st.stop()
 
-# Load attendance data
-with open(filename, "r") as file:
-    attendance_data = json.load(file)
+# --- Service selection ---
+service_option = st.radio("Select Service to View:", ["First Service", "Second Service", "All Services"])
 
-# Build DataFrame
-df_rows = []
-for rec in attendance_data:
-    df_rows.append({
-        "Full Name": rec["name"],
-        "Phone Number": rec["phone_number"],
-        "Others Marked": ", ".join(sorted(rec["others_marked"])),  # sort within cell
-        "Timestamp": rec["timestamp"]
-    })
+# --- Select Date ---
+date_option = st.date_input("Pick a Date", datetime.today())
+date_str = date_option.strftime("%Y-%m-%d")
 
-df = pd.DataFrame(df_rows)
+# --- Load data files ---
+def load_data(date_str, service):
+    filename = f"data/{date_str}-{'first' if service == 'First Service' else 'second'}.json"
+    if os.path.exists(filename):
+        with open(filename, "r") as file:
+            return json.load(file), filename
+    else:
+        return [], filename
 
-# Sort all by Full Name (alphabetically)
-df = df.sort_values(by="Full Name")
+if service_option in ["First Service", "Second Service"]:
+    data, file_path = load_data(date_str, service_option)
+else:
+    first_data, first_file = load_data(date_str, "First Service")
+    second_data, second_file = load_data(date_str, "Second Service")
+    data = first_data + second_data
+    file_path = None  # not relevant here
 
-# Show table
-st.subheader("📋 Attendance Table")
-st.dataframe(df, use_container_width=True)
+# --- Process and Display Data ---
+if data:
+    rows = []
+    for record in data:
+        rows.append({
+            "Name": record["name"],
+            "Phone Number": record["phone_number"],
+            "Service": record["service"],
+            "Marked For": ", ".join(record["others_marked"]),
+            "Timestamp": record["timestamp"]
+        })
+        for name in record["others_marked"]:
+            rows.append({
+                "Name": name,
+                "Phone Number": "N/A",
+                "Service": record["service"],
+                "Marked For": "—",
+                "Timestamp": record["timestamp"]
+            })
 
-# Total count
-num_main = len(df)
-num_others = sum(len(rec["others_marked"]) for rec in attendance_data)
-total_present = num_main + num_others
+    df = pd.DataFrame(rows)
+    df = df.sort_values(by="Name")  # Sort alphabetically
 
-st.success(f"✅ Total People Marked Present: {total_present} ({num_main} main + {num_others} others)")
+    st.dataframe(df, use_container_width=True)
 
-# Download Excel
-excel_buffer = BytesIO()
-df.to_excel(excel_buffer, index=False)
-excel_buffer.seek(0)
+    st.markdown(f"**👥 Total Attendance:** {len(df)} people")
 
-st.download_button(
-    label="📥 Download as Excel",
-    data=excel_buffer,
-    file_name=f"{selected_date}-{service_option.lower().replace(' ', '_')}.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+    # --- Download as Excel ---
+    excel_filename = f"{date_str}-{service_option.replace(' ', '_').lower()}-attendance.xlsx"
+    excel_bytes = df.to_excel(index=False, engine="openpyxl")
+
+    st.download_button(
+        label="📥 Download Attendance (Excel)",
+        data=excel_bytes,
+        file_name=excel_filename,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+else:
+    st.info("No attendance records found for this selection.")
