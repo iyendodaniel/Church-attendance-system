@@ -9,7 +9,7 @@ st.title("📋 Attendance Records (Admin View)")
 
 # --- Admin Password ---
 admin_pass = st.text_input("Enter Admin Passcode", type="password")
-if admin_pass != "your_secret_pass":
+if admin_pass != "teens":
     st.warning("Enter the correct admin passcode to view attendance.")
     st.stop()
 
