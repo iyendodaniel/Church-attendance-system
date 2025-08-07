@@ -8,8 +8,9 @@ st.set_page_config(page_title="View Attendance", layout="wide")
 st.title("📋 Attendance Records (Admin View)")
 
 # --- Admin Password ---
+correct_code = st.secrets["attendance"]["admin_view_code"]
 admin_pass = st.text_input("Enter Admin Passcode", type="password")
-if admin_pass != "teens":
+if admin_pass != correct_code:
     st.warning("Enter the correct admin passcode to view attendance.")
     st.stop()
 

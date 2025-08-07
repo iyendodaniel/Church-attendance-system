@@ -8,15 +8,16 @@ DATA_DIR = "./data"
 FIRST_SERVICE_FILE = os.path.join(DATA_DIR, "first_service.json")
 SECOND_SERVICE_FILE = os.path.join(DATA_DIR, "second_service.json")
 
-# 🔐 Access Code
-second_service_access_code = "mark"  # Change this to something secure
 
 st.title("🔄 Mark 2nd Service Stayers (Non-Phone Users)")
 
 # --- Step 1: Ask for Access Code ---
+
+# 🔐 Access Code
+correct_code = st.secrets["attendance"]["second_mark_code"]
 code = st.text_input("Enter access code to continue", type="password")
 
-if code != second_service_access_code:
+if code != correct_code:
     st.warning("Access code required.")
     st.stop()
 
