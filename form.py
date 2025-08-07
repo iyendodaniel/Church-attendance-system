@@ -9,10 +9,10 @@ today_str = now.strftime("%Y-%m-%d")
 timestamp_str = now.isoformat()         # for record timestamp
 
 
-access_code = st.text_input("Enter Access Code:", type="password")
+form_access_code = st.text_input("Enter Access Code:", type="password")
 correct_code = st.secrets["attendance"]["access_code"]
 
-if access_code != correct_code:
+if form_access_code != correct_code:
     st.error("Invalid access code. Please contact admin.")
     st.stop()
 
