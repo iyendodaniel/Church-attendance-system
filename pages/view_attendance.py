@@ -59,7 +59,13 @@ if data:
             })
 
     df = pd.DataFrame(rows)
-    df = df.sort_values(by="Name")  # Sort alphabetically
+
+    # Sort alphabetically by Name
+    df = df.sort_values(by="Name").reset_index(drop=True)
+
+    # Add numbering column
+    df.index += 1
+    df.index.name = "#"
 
     st.dataframe(df, use_container_width=True)
 
@@ -67,13 +73,15 @@ if data:
 
     # --- Download as Excel ---
     excel_filename = f"{date_str}-{service_option.replace(' ', '_').lower()}-attendance.xlsx"
-    excel_bytes = df.to_excel(index=False, engine="openpyxl")
-
+    from io import BytesIO
+    output = BytesIO()
+    df.to_excel(output, index=True, engine="openpyxl")  # Keep numbering
     st.download_button(
         label="📥 Download Attendance (Excel)",
-        data=excel_bytes,
+        data=output.getvalue(),
         file_name=excel_filename,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 else:
     st.info("No attendance records found for this selection.")
+
