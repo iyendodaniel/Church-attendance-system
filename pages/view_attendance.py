@@ -69,26 +69,27 @@ if data:
     df = pd.DataFrame(rows)
 
     # Sort alphabetically & add numbering
-    df = df.sort_values(by="Name").reset_index(drop=True)
-    df.index += 1
-    df.insert(0, "#", df.index)
+    # Sort alphabetically & add numbering
+df = df.sort_values(by="Name").reset_index(drop=True)
 
+# Remove old "#" column if it exists
+if "#" in df.columns:
+    df = df.drop(columns=["#"])
 
-    st.dataframe(df, use_container_width=True)
+df.index += 1
+df.insert(0, "#", df.index)
 
-    st.markdown(f"**👥 Total Attendance:** {len(df)} people")
+st.dataframe(df, use_container_width=True)
+st.markdown(f"**👥 Total Attendance:** {len(df)} people")
 
-    # --- Download as Excel ---
-    excel_filename = f"{date_str}-{service_option.replace(' ', '_').lower()}-attendance.xlsx"
-    from io import BytesIO
-    output = BytesIO()
-    df.to_excel(output, index=True, engine="openpyxl")  # Keep numbering
-    st.download_button(
-        label="📥 Download Attendance (Excel)",
-        data=output.getvalue(),
-        file_name=excel_filename,
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-else:
-    st.info("No attendance records found for this selection.")
-
+# --- Download as Excel ---
+excel_filename = f"{date_str}-{service_option.replace(' ', '_').lower()}-attendance.xlsx"
+from io import BytesIO
+output = BytesIO()
+df.to_excel(output, index=False, engine="openpyxl")  # index=False to avoid duplicate numbering
+st.download_button(
+    label="📥 Download Attendance (Excel)",
+    data=output.getvalue(),
+    file_name=excel_filename,
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
