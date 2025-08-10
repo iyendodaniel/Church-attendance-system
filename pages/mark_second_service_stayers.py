@@ -3,17 +3,15 @@ import json
 import os
 from datetime import datetime
 
-# 📁 Paths
+# 📅 Today's date
+today_str = datetime.now().strftime("%Y-%m-%d")
 DATA_DIR = "./data"
-FIRST_SERVICE_FILE = os.path.join(DATA_DIR, "first_service.json")
-SECOND_SERVICE_FILE = os.path.join(DATA_DIR, "second_service.json")
+FIRST_SERVICE_FILE = os.path.join(DATA_DIR, f"{today_str}-first.json")
+SECOND_SERVICE_FILE = os.path.join(DATA_DIR, f"{today_str}-second.json")
 
-
-st.title("🔄 Mark 2nd Service Stayers (Non-Phone Users)")
+st.title("🔄 Mark 2nd Service Stayers (Others Marked)")
 
 # --- Step 1: Ask for Access Code ---
-
-# 🔐 Access Code
 correct_code = st.secrets["attendance"]["second_mark_code"]
 code = st.text_input("Enter access code to continue", type="password")
 
@@ -35,40 +33,49 @@ if not os.path.exists(FIRST_SERVICE_FILE):
 with open(FIRST_SERVICE_FILE, "r") as f:
     first_data = json.load(f)
 
-# --- Step 4: Get "others_marked" entries only ---
-others = [entry for entry in first_data if entry.get("marked_by") == "others_marked"]
+# --- Step 4: Collect only "others_marked" entries ---
+others = []
+for entry in first_data:
+    if "others_marked" in entry and entry["others_marked"]:
+        for other_name in entry["others_marked"]:
+            others.append({"name": other_name})
 
 if not others:
-    st.info("No non-phone users found in first service data.")
+    st.info("No 'others marked' attendees found in first service.")
     st.stop()
 
-# --- Step 5: Let Daniel select who stayed ---
-names = [f"{entry['name']} ({entry['phone']})" for entry in others]
-selected = st.multiselect("Select those who stayed for 2nd service", names)
+# --- Step 5: Remove duplicates ---
+unique_names = sorted(set(o["name"] for o in others))
 
-# --- Step 6: Load or create 2nd service data ---
+# --- Step 6: Multiselect list ---
+selected_names = st.multiselect(
+    "Select those who stayed for 2nd service",
+    unique_names
+)
+
+# --- Step 7: Load or create second service file ---
 if os.path.exists(SECOND_SERVICE_FILE):
     with open(SECOND_SERVICE_FILE, "r") as f:
         second_data = json.load(f)
 else:
     second_data = []
 
-# --- Step 7: Add selected names to 2nd service JSON under Daniel ---
+# --- Step 8: Save selections ---
 if st.button("✅ Mark Selected as 2nd Service Attendees"):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_entries = []
-    for entry in others:
-        full = f"{entry['name']} ({entry['phone']})"
-        if full in selected:
-            new_entry = {
-                "name": entry["name"],
-                "phone": entry["phone"],
-                "marked_by": "Daniel",
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+
+    for name in selected_names:
+        new_entry = {
+            "name": name,
+            "phone_number": "N/A",
+            "marked_by": "Daniel",
+            "timestamp": timestamp
+        }
+        if not any(d["name"] == new_entry["name"] for d in second_data):
             second_data.append(new_entry)
             new_entries.append(new_entry)
 
-    # Save updated second service JSON
     with open(SECOND_SERVICE_FILE, "w") as f:
         json.dump(second_data, f, indent=4)
 
