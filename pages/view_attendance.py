@@ -41,37 +41,37 @@ else:
 # --- Process and Display Data ---
 if data:
     rows = []
-for record in data:
-    others_count = len(record.get("others_marked", []))
-    
-    # Main person
-    rows.append({
-        "#": None,  # Will fill later
-        "Name": record["name"],
-        "Phone Number": record.get("phone_number", "N/A"),
-        "Service": record["service"],
-        "Marked For": f"{others_count} people" if others_count > 0 else "-",
-        "Timestamp": record["timestamp"]
-    })
-    
-    # People they marked for
-    for name in record.get("others_marked", []):
+    for record in data:
+        others_count = len(record.get("others_marked", []))
+        
+        # Main person
         rows.append({
-            "#": None,
-            "Name": name,
-            "Phone Number": "N/A",
+            "#": None,  # Will fill later
+            "Name": record["name"],
+            "Phone Number": record.get("phone_number", "N/A"),
             "Service": record["service"],
-            "Marked For": record["name"],
+            "Marked For": f"{others_count} people" if others_count > 0 else "-",
             "Timestamp": record["timestamp"]
         })
+        
+        # People they marked for
+        for name in record.get("others_marked", []):
+            rows.append({
+                "#": None,
+                "Name": name,
+                "Phone Number": "N/A",
+                "Service": record["service"],
+                "Marked For": record["name"],
+                "Timestamp": record["timestamp"]
+            })
 
-# Create DataFrame
-df = pd.DataFrame(rows)
+    # Create DataFrame
+    df = pd.DataFrame(rows)
 
-# Sort alphabetically & add numbering
-df = df.sort_values(by="Name").reset_index(drop=True)
-df.index += 1
-df.insert(0, "#", df.index)
+    # Sort alphabetically & add numbering
+    df = df.sort_values(by="Name").reset_index(drop=True)
+    df.index += 1
+    df.insert(0, "#", df.index)
 
 
     st.dataframe(df, use_container_width=True)
