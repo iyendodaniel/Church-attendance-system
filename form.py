@@ -27,7 +27,7 @@ with st.form(key="inviter_info_form"):
     if submitted:
         all_valid = True
         # Detect service type
-        if hour < 8:
+        if hour < 7:
             st.error("Attendance hasn't started yet.")
             st.stop()
         elif hour < 11:
