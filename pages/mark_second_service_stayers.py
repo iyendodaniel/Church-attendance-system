@@ -21,7 +21,7 @@ if code != correct_code:
 
 # --- Step 2: Check time is after 11:10 AM ---
 now = datetime.now()
-if now.hour < 11 or (now.hour == 11 and now.minute < 10):
+if now.hour < 10 or (now.hour == 10 and now.minute < 10):
     st.warning("You can only mark 2nd service stayers after 11:10 AM.")
     st.stop()
 
