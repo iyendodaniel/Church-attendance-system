@@ -80,14 +80,14 @@ with st.form(key="inviter_info_form"):
                 with open(filename, "r") as file:
                     attendance_data = json.load(file)
 
-            # Check if already in other service
-            if os.path.exists(other_service_file):
-                with open(other_service_file, "r") as f:
-                    other_service_data = json.load(f)
-                    for record in other_service_data:
-                        if record["phone_number"] == phone_number:
-                            st.error(f"You already marked attendance in the other service: {record['service']}")
-                            all_valid = False
+            # Check duplicates in current service only
+            if service_selection in ["First Service", "Second Service"]:
+                for record in attendance_data:
+                    if record["phone_number"] == phone_number:
+                        st.error(f"You have already marked attendance for {service_selection}.")
+                        all_valid = False
+                        break
+
 
         # Validate name
         if not user_name or len(user_name.strip().split()) < 2:
